@@ -1,0 +1,177 @@
+mainactivity.java
+
+
+package com.example.myapplication7;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+
+import com.google.android.material.snackbar.Snackbar;
+
+public class MainActivity extends AppCompatActivity {
+
+
+    EditText uname,pswd;
+    Button login,cancel;
+    DBHandler db;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        uname=findViewById(R.id.editText);
+        pswd=findViewById(R.id.editText2);
+        login=findViewById(R.id.button);
+        cancel=findViewById(R.id.button2);
+
+        login.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String name=uname.getText().toString();
+                String Password=pswd.getText().toString();
+
+                int id=checkUser(new User(name,Password));
+                if(id==-1)
+                {
+                    Snackbar.make(v,"User"+name+"does not exist",Snackbar.LENGTH_LONG).show();
+                }
+                else {
+                    Snackbar.make(v,"User"+name+"exists",Snackbar.LENGTH_LONG).show();
+                    Intent i= new Intent(MainActivity.this,secondActivity.class);
+                    startActivity(i);
+                }
+
+            }
+        });
+
+        db=new DBHandler(MainActivity.this);
+        db.addUser(new User("vishakh","12345"));
+        db.addUser(new User("Amit","1234567"));
+        db.addUser(new User("Sushant","1234"));
+    }
+
+    public int checkUser(User user)
+    {
+            return db.checkUser(user);
+    }
+}
+
+
+
+
+
+
+DBHandler.java
+
+
+
+package com.example.myapplication7;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+class DBHandler extends SQLiteOpenHelper {
+
+    private static final int Db_version = 1;
+    private static final String Db_name = "Users", Table_name = "User", User_id = "id", User_name = "name", User_password = "password";
+
+    public DBHandler(Context context) {
+        super(context, Db_name, null, Db_version);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        String create_Table = "CREATE TABLE " + Table_name + "(" + User_id + " INTEGER PRIMARY KEY," + User_name + " TEXT," + User_password + " TEXT)";
+        db.execSQL(create_Table);
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldversion, int new_version) {
+        db.execSQL("DROP TABLE IF EXISTS " + Table_name);
+        onCreate(db);
+    }
+
+    public void addUser(User usr) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(User_name, usr.getName());
+        cv.put(User_password, usr.getPassword());
+        db.insert(Table_name, null, cv);
+        db.close();
+    }
+
+    public int checkUser(User us) {
+        int id = -1;
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery("SELECT id FROM " + Table_name + " WHERE " + User_name + "=? AND " + User_password + "=?", new String[]{us.getName(), us.getPassword()});
+        if (cursor.getCount() > 0) {
+            cursor.moveToFirst();
+            id = cursor.getInt(0);
+        }
+        cursor.close();
+        db.close();
+        return id;
+    }
+}
+
+
+User.java
+
+
+package com.example.myapplication7;
+
+class User {
+
+
+    String name, password;
+    int id;
+
+    public User(String name, String password) {
+
+        this.name = name;
+        this.password = password;
+    }
+
+    public User(int id, String name, String password) {
+
+        this.name = name;
+        this.password = password;
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+}
+
+
+
